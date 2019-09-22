@@ -2,10 +2,7 @@ import enum
 from . import db
 import flask_bcrypt
 from sqlalchemy import Enum
-from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
-
-Base = declarative_base()
 
 
 class User(db.Model):

@@ -46,8 +46,8 @@ class MainApi:
     mapping = {Text: text, Image: image, Video: video}
 
     message = api.model('message', {
-        'id': fields.Integer(required=True),
-        'timestamp': fields.DateTime(),
+        'id': fields.Integer,
+        'timestamp': fields.DateTime,
         'sender': fields.Integer(required=True, attribute='sender.id'),
         'recipient': fields.Integer(required=True, attribute='recipient.id'),
         'content': fields.Polymorph(mapping, required=True),

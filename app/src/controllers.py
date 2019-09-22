@@ -28,7 +28,7 @@ class Message(Resource):
     @api.expect(MainApi.message, validate=True)
     def post(self):
         data = request.json
-        return save_new_message(data=data)
+        return save_new_message(data)
 
 
 @api.route('getMessages')
@@ -46,8 +46,5 @@ class Messages(Resource):
     @marshal_with(MainApi.messages)
     def get(self, recipient, start, limit):
         messages = get_messages(recipient, start, limit)
-        return { 'messages' : messages }
-
-        # save_new_message(data=data)
-
+        return {'messages': messages}
 

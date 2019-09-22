@@ -27,17 +27,24 @@ def save_new_user(data):
 
 
 def save_new_message(data):
+
+    type_mapping = {'text': Text, 'image': Image, 'video': Video}
+    content_type = data['content']['type']
+    content = type_mapping[content_type](**data['content'])
+
     message = Message(
-
+        sender_id=data['sender'],
+        recipient_id=data['recipient'],
+        sent_on=datetime.datetime.utcnow(),
+        content=content,
     )
-
-    message.sent_on = datetime.datetime.utcnow()
 
     message_row = save_changes(message)
     response_object = {
         'id': message_row.id,
-        'timestamp': message_row.sent_on
+        'timestamp': message_row.sent_on.strftime("%Y-%m-%dT%H:%M:%SZ")
     }
+
     return response_object, 200
 
 
