@@ -1,13 +1,14 @@
 #!/usr/bin/env python3
 
 from flask import Blueprint
+from flask_marshmallow import Marshmallow
 from flask_migrate import Migrate, MigrateCommand
-from flask_restplus import Api
+from flask_restplus import Api, Namespace
 from flask_script import Manager
 import os
 import unittest
 
-from src import create_app, db
+from src import create_app, db, ma
 from src.controllers import api as api_ns
 
 
@@ -22,6 +23,7 @@ api = Api(blueprint,
 api.add_namespace(api_ns, path='/')
 
 app = create_app(os.getenv('APP_ENV') or 'dev')
+ma = Marshmallow(app)
 app.register_blueprint(blueprint)
 
 app.app_context().push()

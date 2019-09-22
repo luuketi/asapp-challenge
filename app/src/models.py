@@ -5,8 +5,8 @@ from sqlalchemy import Enum
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
 
-
 Base = declarative_base()
+
 
 class User(db.Model):
 
@@ -16,7 +16,6 @@ class User(db.Model):
     username = db.Column(db.String(50), unique=True)
     password_hash = db.Column(db.String(100), nullable=False)
     registered_on = db.Column(db.DateTime, nullable=False)
-
 
     @property
     def password(self):
@@ -33,7 +32,7 @@ class User(db.Model):
         return "<User '{}'>".format(self.username)
 
 
-class Content(Base):
+class Content(db.Model):
     __tablename__ = "content"
 
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
@@ -92,13 +91,13 @@ class Message(db.Model):
 
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     sender_id = db.Column(db.Integer, db.ForeignKey('user.id'))
-    sender = relationship("MessageSender")
+    sender = relationship("User", foreign_keys=[sender_id])
 
     recipient_id = db.Column(db.Integer, db.ForeignKey('user.id'))
-    recipient = relationship("MessageRecipient")
+    recipient = relationship("User", foreign_keys=[recipient_id])
 
     content_id = db.Column(db.Integer, db.ForeignKey('content.id'))
-    content = relationship("MessageContent")
+    content = relationship("Content", foreign_keys=[content_id])
 
     def __repr__(self):
         return "<User '{}'>".format(self.username)
