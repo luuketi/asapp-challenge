@@ -7,10 +7,8 @@ from flask_script import Manager
 import os
 import unittest
 
-
 from src import create_app, db
-from src.controllers import api as user_ns
-from src.models import User
+from src.controllers import api as api_ns
 
 
 blueprint = Blueprint('api', __name__)
@@ -21,7 +19,7 @@ api = Api(blueprint,
           description='REST API for a chat backend'
           )
 
-api.add_namespace(user_ns, path='/users')
+api.add_namespace(api_ns, path='/')
 
 app = create_app(os.getenv('APP_ENV') or 'dev')
 app.register_blueprint(blueprint)

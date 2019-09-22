@@ -1,20 +1,16 @@
 from flask import request
 from flask_restplus import Resource
 
-from .util.dto import UserDto
-from .services import save_new_user, get_all_users, get_a_user
+from .dto import MainApi
+from .services import save_new_user
 
-api = UserDto.api
-_user = UserDto.user
+api = MainApi.api
+_user = MainApi.user
+_message = MainApi.message
 
 
-@api.route('/')
+@api.route('/createUser')
 class User(Resource):
-#    @api.doc('list_of_registered_users')
-#    @api.marshal_list_with(_user, envelope='data')
-#    def get(self):
-#        """List all registered users"""
-#        return get_all_users()
 
     @api.response(200, 'Create a user in the system.')
     @api.doc('createUser')
@@ -24,20 +20,13 @@ class User(Resource):
         data = request.json
         return save_new_user(data=data)
 
-'''
-@api.route('/<public_id>')
-@api.param('public_id', 'The User identifier')
-@api.response(404, 'User not found.')
-class User(Resource):
-    @api.doc('get a user')
-    @api.marshal_with(_user)
-    def get(self, public_id):
-        """get a user given its identifier"""
-        user = get_a_user(public_id)
-        if not user:
-            api.abort(404)
-        else:
-            return user
 
+@api.route('/sendMessage')
+class Message(Resource):
 
-'''
+    @api.response(200, 'Send a message from one user to another.')
+    @api.doc('sendMessage')
+    @api.expect(_message, validate=True)
+    def post(self):
+        data = request.json
+        return save_new_user(data=data)
