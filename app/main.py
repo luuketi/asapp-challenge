@@ -10,6 +10,7 @@ import unittest
 
 from src import create_app, db, ma
 from src.controllers import api as api_ns
+from src.services import add_
 
 
 blueprint = Blueprint('api', __name__)
@@ -33,6 +34,8 @@ manager = Manager(app)
 migrate = Migrate(app, db)
 
 manager.add_command('db', MigrateCommand)
+
+add_()
 
 
 @manager.command

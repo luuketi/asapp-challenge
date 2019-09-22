@@ -15,7 +15,6 @@ class User(db.Model):
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     username = db.Column(db.String(50), unique=True)
     password_hash = db.Column(db.String(100), nullable=False)
-    registered_on = db.Column(db.DateTime, nullable=False)
 
     @property
     def password(self):
@@ -54,6 +53,10 @@ class Text(Content):
         'polymorphic_identity' : 'text',
     }
 
+    def __repr__(self):
+        return "<Text '{}'>".format(self.text)
+
+
 
 class Image(Content):
     __tablename__ = 'image'
@@ -90,6 +93,8 @@ class Message(db.Model):
     __tablename__ = "message"
 
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    sent_on = db.Column(db.DateTime, nullable=False)
+
     sender_id = db.Column(db.Integer, db.ForeignKey('user.id'))
     sender = relationship("User", foreign_keys=[sender_id])
 
@@ -100,6 +105,4 @@ class Message(db.Model):
     content = relationship("Content", foreign_keys=[content_id])
 
     def __repr__(self):
-        return "<User '{}'>".format(self.username)
-
-
+        return "<Message {} {} {}>".format(self.sender, self.recipient, self.content)

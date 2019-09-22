@@ -25,8 +25,7 @@ class MainApi:
     })
 
     content = api.model('content', {
-        'type': fields.String,
-        'class': fields.String(discriminator=True),
+        'type': fields.String(discriminator=True),
     })
 
     text = api.inherit('text', content, {
@@ -47,8 +46,15 @@ class MainApi:
     mapping = {Text: text, Image: image, Video: video}
 
     message = api.model('message', {
-        'sender': fields.Integer(required=True),
-        'recipient': fields.Integer(required=True),
+        'id': fields.Integer(required=True),
+        'timestamp': fields.DateTime(),
+        'sender': fields.Integer(required=True, attribute='sender.id'),
+        'recipient': fields.Integer(required=True, attribute='recipient.id'),
         'content': fields.Polymorph(mapping, required=True),
     })
+
+    messages = {
+        'messages': (fields.List(fields.Nested(message)))
+    }
+
 

@@ -1,9 +1,9 @@
 from flask import request
-from flask_restplus import Namespace, Resource
-from flask_restplus import Namespace, fields
-
+from flask_restplus import Namespace, Resource, marshal_with
+from webargs import fields, validate
+from webargs.flaskparser import use_args, use_kwargs
 from .dto import MainApi
-from .services import save_new_user
+from .services import save_new_user, save_new_message, get_messages
 
 api = MainApi.api
 
@@ -28,4 +28,26 @@ class Message(Resource):
     @api.expect(MainApi.message, validate=True)
     def post(self):
         data = request.json
-        return save_new_user(data=data)
+        return save_new_message(data=data)
+
+
+@api.route('getMessages')
+class Messages(Resource):
+
+    args = {
+        'recipient': fields.Int(required=True),
+        'start': fields.Int(required=True),
+        'limit': fields.Int(missing=100),
+    }
+
+    @api.response(200, 'Fetch all existing messages to a given recipient, within a range of message IDs.')
+    @api.doc('getMessages')
+    @use_kwargs(args)
+    @marshal_with(MainApi.messages)
+    def get(self, recipient, start, limit):
+        messages = get_messages(recipient, start, limit)
+        return { 'messages' : messages }
+
+        # save_new_message(data=data)
+
+
