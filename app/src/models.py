@@ -5,7 +5,16 @@ from sqlalchemy import Enum
 from sqlalchemy.orm import relationship
 
 
-class User(db.Model):
+class SaveMixin:
+    __table_args__ = {'extend_existing': True}
+
+    def save(self):
+        db.session.add(self)
+        db.session.commit()
+        return self
+
+
+class User(db.Model, SaveMixin):
 
     __tablename__ = "user"
 
@@ -23,6 +32,10 @@ class User(db.Model):
 
     def check_password(self, password):
         return flask_bcrypt.check_password_hash(self.password_hash, password)
+
+    @classmethod
+    def find_by_username(cls, username):
+        return cls.query.filter_by(username=username).first()
 
     def __repr__(self):
         return "<User '{}'>".format(self.username)
@@ -85,7 +98,7 @@ class Video(Content):
     }
 
 
-class Message(db.Model):
+class Message(db.Model, SaveMixin):
 
     __tablename__ = "message"
 
@@ -100,6 +113,14 @@ class Message(db.Model):
 
     content_id = db.Column(db.Integer, db.ForeignKey('content.id'))
     content = relationship("Content", foreign_keys=[content_id])
+
+    @classmethod
+    def get_messages(cls, recipient_id, start, limit):
+        messages = Message.query.filter(Message.recipient_id == recipient_id,
+                                        Message.id >= start
+                                        ).limit(limit).all()
+
+        return messages
 
     def __repr__(self):
         return "<Message {} {} {}>".format(self.sender, self.recipient, self.content)
