@@ -18,6 +18,11 @@ class BookSchema(ma.TableSchema):
 
 
 class MainApi:
+
+    class Date(fields.Raw):
+        def format(self, value):
+            return value.strftime("%Y-%m-%dT%H:%M:%SZ")
+
     api = Namespace('api', description='object descriptions')
     user = api.model('user', {
         'username': fields.String(required=True),
@@ -25,29 +30,29 @@ class MainApi:
     })
 
     content = api.model('content', {
-        'type': fields.String(discriminator=True),
+        'type': fields.String(required=True, discriminator=True),
     })
 
     text = api.inherit('text', content, {
-        'text': fields.String
+        'text': fields.String(required=True),
     })
 
     image = api.inherit('image', content, {
-        'url': fields.Url,
-        'height': fields.Integer,
-        'width': fields.Integer,
+        'url': fields.Url(required=True),
+        'height': fields.Integer(required=True),
+        'width': fields.Integer(required=True),
     })
 
     video = api.inherit('video', content, {
-        'url': fields.Url,
-        'source': fields.String(enum=Source._member_names_)
+        'url': fields.String(required=True),
+        'source': fields.String(required=True, attribute=lambda x: str(Source(x.source).name))
     })
 
     mapping = {Text: text, Image: image, Video: video}
 
     message = api.model('message', {
         'id': fields.Integer,
-        'timestamp': fields.DateTime,
+        'timestamp': Date(attribute='sent_on'),
         'sender': fields.Integer(required=True, attribute='sender.id'),
         'recipient': fields.Integer(required=True, attribute='recipient.id'),
         'content': fields.Polymorph(mapping, required=True),

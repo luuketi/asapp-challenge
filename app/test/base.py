@@ -1,7 +1,8 @@
-from flask_testing import TestCase
-from app.main import db
-from manage import app
 
+from flask_testing import TestCase
+import json
+from asapp.app.main import app
+from app.main import db
 
 class BaseTestCase(TestCase):
     """ Base Tests """
@@ -17,3 +18,18 @@ class BaseTestCase(TestCase):
     def tearDown(self):
         db.session.remove()
         db.drop_all()
+
+
+
+class CreateUserTest(BaseTestCase):
+
+    def create_user(self):
+        return self.client.post(
+            '/createUser/',
+            data=json.dumps(dict(
+                username='username',
+                password='123456'
+            )),
+            content_type='application/json'
+        )
+

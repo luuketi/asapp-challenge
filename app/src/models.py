@@ -61,7 +61,7 @@ class Image(Content):
     id = db.Column(db.Integer, db.ForeignKey('content.id'), primary_key=True)
     url = db.Column(db.String, nullable=False)
     height = db.Column(db.Integer, nullable=False)
-    weight = db.Column(db.Integer, nullable=False)
+    width = db.Column(db.Integer, nullable=False)
 
     __mapper_args__ = {
         'polymorphic_identity' : 'image',

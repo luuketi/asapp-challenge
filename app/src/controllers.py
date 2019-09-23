@@ -28,6 +28,7 @@ class Message(Resource):
     @api.expect(MainApi.message, validate=True)
     def post(self):
         data = request.json
+        print(data)
         return save_new_message(data)
 
 
@@ -42,9 +43,10 @@ class Messages(Resource):
 
     @api.response(200, 'Fetch all existing messages to a given recipient, within a range of message IDs.')
     @api.doc('getMessages')
-    @use_kwargs(args)
+    @use_args(args)
     @marshal_with(MainApi.messages)
-    def get(self, recipient, start, limit):
-        messages = get_messages(recipient, start, limit)
+    def get(self, args):
+        print(args)
+        messages = get_messages(args['recipient'], args['start'], args['limit'])
         return {'messages': messages}
 

@@ -1,8 +1,6 @@
-import uuid
 import datetime
-
 from . import db
-from .models import User, Message, Content, Text, Image, Video
+from .models import User, Message, Text, Image, Video
 
 
 def save_new_user(data):
@@ -31,7 +29,7 @@ def save_new_message(data):
     type_mapping = {'text': Text, 'image': Image, 'video': Video}
     content_type = data['content']['type']
     content = type_mapping[content_type](**data['content'])
-
+    print(content)
     message = Message(
         sender_id=data['sender'],
         recipient_id=data['recipient'],
@@ -53,8 +51,6 @@ def get_messages(recipient_id, start, limit):
                                     Message.id >= start
                                    ).limit(limit).all()
 
-    print(messages)
-
     return messages
 
 
@@ -68,7 +64,7 @@ def add_():
     #u=User(username='b',password='b')
     #db.session.add(u)
     #db.session.commit()
-
+    pass
     c = Text(type='text', text='hola')
     db.session.add(c)
     cid = db.session.commit()
