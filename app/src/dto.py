@@ -38,7 +38,7 @@ class MainApi:
     })
 
     image = api.inherit('image', content, {
-        'url': fields.Url(required=True),
+        'url': fields.String(required=True),
         'height': fields.Integer(required=True),
         'width': fields.Integer(required=True),
     })
