@@ -4,6 +4,7 @@ from flask_jwt_extended import (create_access_token, create_refresh_token, jwt_r
 from flask_restplus import Namespace, Resource, marshal_with
 from webargs import fields, validate
 from webargs.flaskparser import use_args, use_kwargs
+from . import db
 from .dto import MainApi
 from .models import User, Message, Text, Image, Video, RevokedToken
 
@@ -94,7 +95,6 @@ class MessageCreation(Resource):
         return response_object, 200
 
 
-
 @api.route('getMessages')
 class Messages(Resource):
 
@@ -113,3 +113,16 @@ class Messages(Resource):
         messages = Message.get_messages(args['recipient'], args['start'], args['limit'])
         return {'messages': messages}
 
+
+@api.route('check')
+class Check(Resource):
+    def post(self):
+        if self.query_health() != 1:
+            raise Exception('unexpected query result')
+        return {"health": "ok"}, 200
+
+    def query_health(self):
+        with db.engine.connect() as conn:
+            result = conn.execute("SELECT 1")
+            (res,) = result.fetchone()
+            return res

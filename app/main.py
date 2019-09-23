@@ -37,8 +37,6 @@ migrate = Migrate(app, db)
 
 manager.add_command('db', MigrateCommand)
 
-#add_()
-
 app.config['JWT_SECRET_KEY'] = 'jwt-secret-string'
 jwt = JWTManager(app)
 
