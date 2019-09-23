@@ -2,13 +2,11 @@
 from flask import Flask
 from flask_bcrypt import Bcrypt
 from flask_sqlalchemy import SQLAlchemy
-from flask_marshmallow import Marshmallow
 
 from .config import config_by_name
 
 
 db = SQLAlchemy()
-ma = Marshmallow()
 flask_bcrypt = Bcrypt()
 
 

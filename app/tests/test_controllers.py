@@ -1,7 +1,6 @@
 import datetime
-import json
 
-from test.base import BaseTestCase
+from tests.base import BaseTestCase
 
 
 class CreateUserTest(BaseTestCase):
@@ -32,7 +31,6 @@ class CreateUserTest(BaseTestCase):
 
         response = self._create_user({'username': 'Juan'})
         self.assert400(response)
-
 
 class LoginTest(BaseTestCase):
 
@@ -74,30 +72,35 @@ class TestSendMessage(BaseTestCase):
 
     def test_SendTextMessage(self):
         data = {'sender': 1, 'recipient': 1, 'content': {'type': 'text', 'text': 'hola'}}
-        response = self._post('sendMessage', data, self.token)
+        response = self._post(self._messages_url, data, self.token)
         self.assertEqual(response.json['id'], 1)
         self.assertIn(str(datetime.date.today()), response.json['timestamp'])
 
     def test_SendImageMessage(self):
         data = {'sender': 1, 'recipient': 1, 'content': {'type': 'image', 'url': 'web.co', 'height': 800, 'width': 600}}
-        response = self._post('sendMessage', data, self.token)
+        response = self._post(self._messages_url, data, self.token)
         self.assertEqual(response.json['id'], 1)
         self.assertIn(str(datetime.date.today()), response.json['timestamp'])
 
     def test_SendVideoMessage(self):
         data = {'sender': 1, 'recipient': 1, 'content': {'type': 'video', 'url': 'web.com', 'source': 'youtube'}}
-        response = self._post('sendMessage', data, self.token)
+        response = self._post(self._messages_url, data, self.token)
         self.assertEqual(response.json['id'], 1)
         self.assertIn(str(datetime.date.today()), response.json['timestamp'])
 
+    def test_SendVideoMessageWithWrongSource(self):
+        data = {'sender': 1, 'recipient': 1, 'content': {'type': 'video', 'url': 'web.com', 'source': 'youtubee'}}
+        response = self._post(self._messages_url, data, self.token)
+        self.assert_status(response, 500)
+
     def test_WrongSender(self):
         data = {'sender': 10, 'recipient': 1, 'content': {'type': 'video', 'url': 'web.com', 'source': 'youtube'}}
-        response = self._post('sendMessage', data, self.token)
+        response = self._post(self._messages_url, data, self.token)
         self.assert400(response)
 
     def test_WrongRecipient(self):
         data = {'sender': 1, 'recipient': 10, 'content': {'type': 'video', 'url': 'web.com', 'source': 'youtube'}}
-        response = self._post('sendMessage', data, self.token)
+        response = self._post(self._messages_url, data, self.token)
         self.assert400(response)
 
 
@@ -115,16 +118,16 @@ class TestMessages(BaseTestCase):
                 for i in range(6):
                     data = {'sender': s, 'recipient': r,
                             'content': {'type': 'image', 'url': 'web.co', 'height': i, 'width': 6}}
-                    self._post('sendMessage', data, self.token)
-        response = self._get('getMessages', {'recipient': 2, 'start': 1}, self.token)
+                    self._post(self._messages_url, data, self.token)
+        response = self._get(self._messages_url, {'recipient': 2, 'start': 1}, self.token)
         self.assert200(response)
         self.assertEqual(len(response.json['messages']), 18)
 
     def test_GetMessagesWithHigherStartAndLimit(self):
         for i in range(15):
             data = {'sender': 1, 'recipient': 1, 'content': {'type': 'image', 'url': 'web.co', 'height': i, 'width': 6}}
-            self._post('sendMessage', data, self.token)
-        response = self._get('getMessages', {'recipient': 1, 'start': 10, 'limit': 2}, self.token)
+            self._post(self._messages_url, data, self.token)
+        response = self._get(self._messages_url, {'recipient': 1, 'start': 10, 'limit': 2}, self.token)
         self.assert200(response)
         self.assertEqual(len(response.json['messages']), 2)
 

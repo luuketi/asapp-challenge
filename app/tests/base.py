@@ -1,4 +1,4 @@
-
+from flask import url_for
 from flask_testing import TestCase
 import json
 from main import app, db
@@ -7,6 +7,7 @@ from main import app, db
 class BaseTestCase(TestCase):
     """ Base Tests """
 
+
     def create_app(self):
         app.config.from_object('src.config.TestingConfig')
         return app
@@ -14,6 +15,8 @@ class BaseTestCase(TestCase):
     def setUp(self):
         db.create_all()
         db.session.commit()
+        self._messages_url = url_for('api.api_messages')
+
 
     def tearDown(self):
         db.session.remove()
@@ -39,14 +42,14 @@ class BaseTestCase(TestCase):
 
     def _create_user(self, data=None):
         data = {'username': 'John', 'password': '123456'} if not data else data
-        return self._post('/createUser', data)
+        return self._post(url_for('api.api_users'), data)
 
     def _login(self, data=None):
         data = {'username': 'John', 'password': '123456'} if not data else data
-        return self._post('/login', data)
+        return self._post(url_for('api.api_login'), data)
 
     def _logout(self, token, data=None):
         data = {'username': 'John', 'password': '123456'} if not data else data
-        return self._post('/logout', data, token)
+        return self._post(url_for('api.api_logout'), data, token)
 
 

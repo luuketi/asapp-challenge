@@ -1,20 +1,5 @@
 from flask_restplus import Namespace, fields
 from .models import User, Source, Text, Image, Video
-from src import ma
-
-
-
-'''
-class UserSchema(ma.ModelSchema):
-    class Meta:
-        model = User
-
-
-class BookSchema(ma.TableSchema):
-    class Meta:
-        table = Book.__table__
-
-'''
 
 
 class MainApi:

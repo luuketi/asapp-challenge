@@ -11,14 +11,15 @@ from src.models import User, Message, Text, Image, Video, RevokedToken
 api = MainApi.api
 
 
-@api.route('createUser')
-class CreateUser(Resource):
+@api.route('/users')
+class Users(Resource):
 
-    @api.response(200, 'Create a user in the system.')
+    @api.response(200, '')
+    @api.response(409, 'User already exists.')
     @api.doc('createUser')
     @api.expect(MainApi.user, validate=True)
     def post(self):
-        """Creates a new User """
+        """Create a user in the system."""
         data = request.json
         user = User.query.filter_by(username=data['username']).first()
         if not user:
@@ -30,12 +31,14 @@ class CreateUser(Resource):
             return response_object, 409
 
 
-@api.route('login')
+@api.route('/login')
 class Login(Resource):
 
-    @api.response(200, 'Create a user in the system.')
+    @api.response(200, '')
+    @api.response(401, 'Unauthorized')
     @api.expect(MainApi.user, validate=True)
     def post(self):
+        """Log in as an existing user."""
         data = request.json
         current_user = User.find_by_username(data['username'])
 
@@ -53,11 +56,12 @@ class Login(Resource):
             return {'message': 'Wrong credentials'}, 401
 
 
-@api.route('logout')
+@api.route('/logout')
 class Logout(Resource):
 
     @jwt_required
     def post(self):
+        """Log out an existing user."""
         jti = get_raw_jwt()['jti']
         try:
             revoked_token = RevokedToken(jti=jti)
@@ -67,26 +71,35 @@ class Logout(Resource):
             return {'message': 'Something went wrong'}, 500
 
 
-@api.route('sendMessage')
-class SendMessage(Resource):
+@api.route('/messages')
+class Messages(Resource):
 
-    @api.response(200, 'Send a message from one user to another.')
+    def _check_user_exists(self, user_type, user_id):
+        user = User.query.filter_by(id=user_id).first()
+        if not user:
+            return {'message': "{} {} doesn't exist".format(user_type, user_id)}, 400
+
+    @api.response(200, '')
+    @api.response(400, 'Sender/Receiver not found')
     @api.doc('sendMessage')
     @api.expect(MainApi.message, validate=True)
-    #@jwt_required
+    @jwt_required
     def post(self):
+        """Send a message from one user to another."""
         data = request.json
 
-        sender = User.query.filter_by(id=data['sender']).first()
-        if not sender:
-            return {'message': "sender doesn't exist"}, 400
-        recipient = User.query.filter_by(id=data['recipient']).first()
-        if not recipient:
-            return {'message': "recipient doesn't exist"}, 400
+        user_err = self._check_user_exists('sender', data['sender'])
+        recipient_err = self._check_user_exists('recipient', data['recipient'])
+        if user_err or recipient_err:
+            return user_err or recipient_err
 
         type_mapping = {'text': Text, 'image': Image, 'video': Video}
         content_type = data['content']['type']
-        content = type_mapping[content_type](**data['content'])
+        try:
+            content = type_mapping[content_type](**data['content'])
+        except Exception as e:
+            return {'message': str(e.args[0])}, 500
+
         new_message = Message(
             sender_id=data['sender'],
             recipient_id=data['recipient'],
@@ -101,29 +114,29 @@ class SendMessage(Resource):
 
         return response_object, 200
 
-
-@api.route('getMessages')
-class Messages(Resource):
-
     args = {
         'recipient': fields.Int(required=True),
         'start': fields.Int(required=True),
         'limit': fields.Int(missing=100),
     }
 
-    @api.response(200, 'Fetch all existing messages to a given recipient, within a range of message IDs.')
+    @api.response(200, '')
     @api.doc('getMessages')
     @use_args(args)
     @marshal_with(MainApi.messages)
-    #@jwt_required
+    @jwt_required
     def get(self, args):
+        """Fetch all existing messages to a given recipient, within a range of message IDs."""
         messages = Message.get_messages(args['recipient'], args['start'], args['limit'])
         return {'messages': messages}
 
 
-@api.route('check')
+@api.route('/check')
 class Check(Resource):
+
+    @api.response(200, '')
     def post(self):
+        """Check the health of the system."""
         if self.query_health() != 1:
             raise Exception('unexpected query result')
         return {"health": "ok"}, 200

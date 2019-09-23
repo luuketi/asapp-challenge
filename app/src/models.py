@@ -1,7 +1,6 @@
 import enum
 import flask_bcrypt
-from sqlalchemy import Enum
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import relationship, validates
 
 from src import db
 
@@ -20,7 +19,7 @@ class User(db.Model, SaveMixin):
     __tablename__ = "user"
 
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    username = db.Column(db.String(50), unique=True)
+    username = db.Column(db.String(50), unique=True, nullable=False)
     password_hash = db.Column(db.String(100), nullable=False)
 
     @property
@@ -60,8 +59,8 @@ class Content(db.Model):
     type = db.Column(db.String(15), nullable=False)
 
     __mapper_args__ = {
-        'polymorphic_identity' : 'content',
-        'polymorphic_on' : type,
+        'polymorphic_identity': 'content',
+        'polymorphic_on': type,
     }
 
 
@@ -72,7 +71,7 @@ class Text(Content):
     text = db.Column(db.String, nullable=False)
 
     __mapper_args__ = {
-        'polymorphic_identity' : 'text',
+        'polymorphic_identity': 'text',
     }
 
     def __repr__(self):
@@ -89,8 +88,11 @@ class Image(Content):
     width = db.Column(db.Integer, nullable=False)
 
     __mapper_args__ = {
-        'polymorphic_identity' : 'image',
+        'polymorphic_identity': 'image',
     }
+
+    def __repr__(self):
+        return "<Image {}x{} in {}>".format(self.height, self.width, self.url)
 
 
 class Source(enum.Enum):
@@ -103,11 +105,19 @@ class Video(Content):
 
     id = db.Column(db.Integer, db.ForeignKey('content.id'), primary_key=True)
     url = db.Column(db.String, nullable=False)
-    source = db.Column(Enum(Source), nullable=False)
+    source = db.Column(db.Enum(Source), nullable=False)
+
+    @validates('source')
+    def validate_source(self, key, source):
+        assert source in Source._member_names_, '{} is not a valid source'.format(source)
+        return source
 
     __mapper_args__ = {
-        'polymorphic_identity' : 'video',
+        'polymorphic_identity': 'video',
     }
+
+    def __repr__(self):
+        return "<Image in {} {}>".format(self.source, self.url)
 
 
 class Message(db.Model, SaveMixin):
