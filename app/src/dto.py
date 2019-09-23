@@ -1,6 +1,6 @@
 from flask_restplus import Namespace, fields
 from .models import User, Source, Text, Image, Video
-from . import ma
+from src import ma
 
 
 

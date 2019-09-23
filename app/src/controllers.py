@@ -4,15 +4,15 @@ from flask_jwt_extended import (create_access_token, create_refresh_token, jwt_r
 from flask_restplus import Namespace, Resource, marshal_with
 from webargs import fields, validate
 from webargs.flaskparser import use_args, use_kwargs
-from . import db
-from .dto import MainApi
-from .models import User, Message, Text, Image, Video, RevokedToken
+from src import db
+from src.dto import MainApi
+from src.models import User, Message, Text, Image, Video, RevokedToken
 
 api = MainApi.api
 
 
 @api.route('createUser')
-class SignUp(Resource):
+class CreateUser(Resource):
 
     @api.response(200, 'Create a user in the system.')
     @api.doc('createUser')
@@ -40,7 +40,7 @@ class Login(Resource):
         current_user = User.find_by_username(data['username'])
 
         if not current_user:
-            return {'message': "User {} doesn't exist".format(data['username'])}
+            return {'message': "User {} doesn't exist".format(data['username'])}, 401
 
         if current_user.check_password(data['password']):
             access_token = create_access_token(identity=data['username'])
@@ -50,7 +50,7 @@ class Login(Resource):
                 'token': access_token,
             }
         else:
-            return {'message': 'Wrong credentials'}
+            return {'message': 'Wrong credentials'}, 401
 
 
 @api.route('logout')
@@ -63,9 +63,8 @@ class Logout(Resource):
             revoked_token = RevokedToken(jti=jti)
             revoked_token.save()
             return {'message': 'Access token has been revoked'}
-        except:
+        except Exception:
             return {'message': 'Something went wrong'}, 500
-
 
 
 @api.route('sendMessage')

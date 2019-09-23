@@ -1,14 +1,13 @@
 #!/usr/bin/env python3
 
 from flask import Blueprint
+from flask_jwt_extended import JWTManager
 from flask_marshmallow import Marshmallow
 from flask_migrate import Migrate, MigrateCommand
 from flask_restplus import Api, Namespace
 from flask_script import Manager
 import os
 import unittest
-from flask_jwt_extended import JWTManager
-
 
 from src import create_app, db, ma
 from src.controllers import api as api_ns
@@ -50,7 +49,6 @@ def check_if_token_in_blacklist(decrypted_token):
     return models.RevokedToken.is_jti_blacklisted(jti)
 
 
-
 @app.before_first_request
 def create_tables():
     db.create_all()
@@ -63,12 +61,11 @@ def run():
 
 @manager.command
 def test():
-    tests = unittest.TestLoader().discover('app/test', pattern='*.py')
+    tests = unittest.TestLoader().discover('test', pattern='*.py')
     result = unittest.TextTestRunner(verbosity=2).run(tests)
     if result.wasSuccessful():
         return 0
     return 1
-
 
 
 if __name__ == '__main__':

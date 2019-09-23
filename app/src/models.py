@@ -1,8 +1,9 @@
 import enum
-from . import db
 import flask_bcrypt
 from sqlalchemy import Enum
 from sqlalchemy.orm import relationship
+
+from src import db
 
 
 class SaveMixin:
