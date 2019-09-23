@@ -1,9 +1,9 @@
 import datetime
 from flask import request
-from flask_jwt_extended import (create_access_token, create_refresh_token, jwt_required, jwt_refresh_token_required, get_jwt_identity, get_raw_jwt)
-from flask_restplus import Namespace, Resource, marshal_with
-from webargs import fields, validate
-from webargs.flaskparser import use_args, use_kwargs
+from flask_jwt_extended import create_access_token, create_refresh_token, jwt_required, get_raw_jwt
+from flask_restplus import Resource, marshal_with
+from webargs import fields
+from webargs.flaskparser import use_args
 from src import db
 from src.dto import MainApi
 from src.models import User, Message, Text, Image, Video, RevokedToken
@@ -68,14 +68,22 @@ class Logout(Resource):
 
 
 @api.route('sendMessage')
-class MessageCreation(Resource):
+class SendMessage(Resource):
 
     @api.response(200, 'Send a message from one user to another.')
     @api.doc('sendMessage')
     @api.expect(MainApi.message, validate=True)
-    @jwt_required
+    #@jwt_required
     def post(self):
         data = request.json
+
+        sender = User.query.filter_by(id=data['sender']).first()
+        if not sender:
+            return {'message': "sender doesn't exist"}, 400
+        recipient = User.query.filter_by(id=data['recipient']).first()
+        if not recipient:
+            return {'message': "recipient doesn't exist"}, 400
+
         type_mapping = {'text': Text, 'image': Image, 'video': Video}
         content_type = data['content']['type']
         content = type_mapping[content_type](**data['content'])
@@ -107,7 +115,7 @@ class Messages(Resource):
     @api.doc('getMessages')
     @use_args(args)
     @marshal_with(MainApi.messages)
-    @jwt_required
+    #@jwt_required
     def get(self, args):
         messages = Message.get_messages(args['recipient'], args['start'], args['limit'])
         return {'messages': messages}

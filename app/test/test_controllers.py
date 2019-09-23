@@ -1,3 +1,4 @@
+import datetime
 import json
 
 from test.base import BaseTestCase
@@ -59,4 +60,71 @@ class TestLogout(BaseTestCase):
         response = self._login()
         response = self._logout(response.json['token'])
         self.assert200(response)
+
+
+class TestSendMessage(BaseTestCase):
+
+    def setUp(self):
+        super().setUp()
+        self._create_user()
+        self.token = self._login().json['token']
+
+    def tearDown(self):
+        super().tearDown()
+
+    def test_SendTextMessage(self):
+        data = {'sender': 1, 'recipient': 1, 'content': {'type': 'text', 'text': 'hola'}}
+        response = self._post('sendMessage', data, self.token)
+        self.assertEqual(response.json['id'], 1)
+        self.assertIn(str(datetime.date.today()), response.json['timestamp'])
+
+    def test_SendImageMessage(self):
+        data = {'sender': 1, 'recipient': 1, 'content': {'type': 'image', 'url': 'web.co', 'height': 800, 'width': 600}}
+        response = self._post('sendMessage', data, self.token)
+        self.assertEqual(response.json['id'], 1)
+        self.assertIn(str(datetime.date.today()), response.json['timestamp'])
+
+    def test_SendVideoMessage(self):
+        data = {'sender': 1, 'recipient': 1, 'content': {'type': 'video', 'url': 'web.com', 'source': 'youtube'}}
+        response = self._post('sendMessage', data, self.token)
+        self.assertEqual(response.json['id'], 1)
+        self.assertIn(str(datetime.date.today()), response.json['timestamp'])
+
+    def test_WrongSender(self):
+        data = {'sender': 10, 'recipient': 1, 'content': {'type': 'video', 'url': 'web.com', 'source': 'youtube'}}
+        response = self._post('sendMessage', data, self.token)
+        self.assert400(response)
+
+    def test_WrongRecipient(self):
+        data = {'sender': 1, 'recipient': 10, 'content': {'type': 'video', 'url': 'web.com', 'source': 'youtube'}}
+        response = self._post('sendMessage', data, self.token)
+        self.assert400(response)
+
+
+class TestMessages(BaseTestCase):
+
+    def setUp(self):
+        super().setUp()
+        for i in range(6):
+            self._create_user({'username': 'user{}'.format(i), 'password': '123456'})
+        self.token = self._login({'username': 'user1', 'password': '123456'}).json['token']
+
+    def test_GetMessages(self):
+        for s in range(1, 4):
+            for r in range(1, 3):
+                for i in range(6):
+                    data = {'sender': s, 'recipient': r,
+                            'content': {'type': 'image', 'url': 'web.co', 'height': i, 'width': 6}}
+                    self._post('sendMessage', data, self.token)
+        response = self._get('getMessages', {'recipient': 2, 'start': 1}, self.token)
+        self.assert200(response)
+        self.assertEqual(len(response.json['messages']), 18)
+
+    def test_GetMessagesWithHigherStartAndLimit(self):
+        for i in range(15):
+            data = {'sender': 1, 'recipient': 1, 'content': {'type': 'image', 'url': 'web.co', 'height': i, 'width': 6}}
+            self._post('sendMessage', data, self.token)
+        response = self._get('getMessages', {'recipient': 1, 'start': 10, 'limit': 2}, self.token)
+        self.assert200(response)
+        self.assertEqual(len(response.json['messages']), 2)
 

@@ -19,6 +19,15 @@ class BaseTestCase(TestCase):
         db.session.remove()
         db.drop_all()
 
+    def _get(self, route, params, token=None):
+        headers = {'Authorization': 'Bearer ' + token} if token else {}
+        return self.client.get(
+            route,
+            query_string=params,
+            content_type='application/json',
+            headers=headers,
+        )
+
     def _post(self, route, data, token=None):
         headers = {'Authorization': 'Bearer ' + token} if token else {}
         return self.client.post(
