@@ -78,7 +78,6 @@ class Text(Content):
         return "<Text '{}'>".format(self.text)
 
 
-
 class Image(Content):
     __tablename__ = 'image'
 

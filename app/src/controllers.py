@@ -21,14 +21,14 @@ class Users(Resource):
     def post(self):
         """Create a user in the system."""
         data = request.json
-        user = User.query.filter_by(username=data['username']).first()
-        if not user:
-            new_user = User(username=data['username'], password=data['password']).save()
-            response_object = {'id': new_user.id}
-            return response_object, 200
-        else:
-            response_object = {'status': 'fail', 'message': 'User already exists. Please Log in.'}
-            return response_object, 409
+
+        # checks if user exists
+        if User.find_by_username(data['username']):
+            return {'status': 'fail', 'message': 'User already exists. Please Log in.'}, 409
+
+        # create user
+        new_user = User(username=data['username'], password=data['password']).save()
+        return {'id': new_user.id}, 200
 
 
 @api.route('/login')
@@ -40,20 +40,18 @@ class Login(Resource):
     def post(self):
         """Log in as an existing user."""
         data = request.json
+
+        # check if user exists
         current_user = User.find_by_username(data['username'])
-
         if not current_user:
-            return {'message': "User {} doesn't exist".format(data['username'])}, 401
+            return {'status': 'fail', 'message': "User {} doesn't exist".format(data['username'])}, 401
 
+        # return token if password matches
         if current_user.check_password(data['password']):
             access_token = create_access_token(identity=data['username'])
-            refresh_token = create_refresh_token(identity=data['username'])
-            return {
-                'id': current_user.id,
-                'token': access_token,
-            }
+            return {'id': current_user.id, 'token': access_token}
         else:
-            return {'message': 'Wrong credentials'}, 401
+            return {'status': 'fail', 'message': 'Wrong credentials'}, 401
 
 
 @api.route('/logout')
@@ -68,16 +66,15 @@ class Logout(Resource):
             revoked_token.save()
             return {'message': 'Access token has been revoked'}
         except Exception:
-            return {'message': 'Something went wrong'}, 500
+            return {'status': 'fail', 'message': 'Something went wrong'}, 500
 
 
 @api.route('/messages')
 class Messages(Resource):
 
     def _check_user_exists(self, user_type, user_id):
-        user = User.query.filter_by(id=user_id).first()
-        if not user:
-            return {'message': "{} {} doesn't exist".format(user_type, user_id)}, 400
+        if not User.query.filter_by(id=user_id).first():
+            return {'status': 'fail', 'message': "{} {} doesn't exist".format(user_type, user_id)}, 400
 
     @api.response(200, '')
     @api.response(400, 'Sender/Receiver not found')
@@ -88,17 +85,19 @@ class Messages(Resource):
         """Send a message from one user to another."""
         data = request.json
 
+        # checks if sender and recipient exist
         user_err = self._check_user_exists('sender', data['sender'])
         recipient_err = self._check_user_exists('recipient', data['recipient'])
         if user_err or recipient_err:
             return user_err or recipient_err
 
+        # create content object
         type_mapping = {'text': Text, 'image': Image, 'video': Video}
         content_type = data['content']['type']
         try:
             content = type_mapping[content_type](**data['content'])
         except Exception as e:
-            return {'message': str(e.args[0])}, 500
+            return {'status': 'fail', 'message': str(e.args[0])}, 500
 
         new_message = Message(
             sender_id=data['sender'],
@@ -107,12 +106,7 @@ class Messages(Resource):
             content=content,
         ).save()
 
-        response_object = {
-            'id': new_message.id,
-            'timestamp': new_message.sent_on.strftime("%Y-%m-%dT%H:%M:%SZ")
-        }
-
-        return response_object, 200
+        return {'id': new_message.id, 'timestamp': new_message.sent_on.strftime("%Y-%m-%dT%H:%M:%SZ")}, 200
 
     args = {
         'recipient': fields.Int(required=True),
