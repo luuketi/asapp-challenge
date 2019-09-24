@@ -155,6 +155,7 @@ class TestMessages(BaseTestCase):
         response = self._get(self._messages_url, {'recipient': 1, 'start': 10, 'limit': 2}, self.token)
         self.assert200(response)
         self.assertEqual(len(response.json['messages']), 2)
+        self.assertEqual(response.json['messages'][0]['id'], 10)
 
     def test_NoAuthInGetMessages(self):
         data = {'sender': 1, 'recipient': 1, 'content': {'type': 'image', 'url': 'web.co', 'height': 8, 'width': 6}}
