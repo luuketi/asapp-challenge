@@ -37,6 +37,10 @@ class User(db.Model, SaveMixin):
     def find_by_username(cls, username):
         return cls.query.filter_by(username=username).first()
 
+    @classmethod
+    def find_by_id(cls, user_id):
+        return cls.query.filter_by(id=user_id).first()
+
     def __repr__(self):
         return "<User '{}'>".format(self.username)
 
@@ -52,7 +56,7 @@ class RevokedToken(db.Model, SaveMixin):
         return bool(query)
 
 
-class Content(db.Model):
+class Content(db.Model, SaveMixin):
     __tablename__ = "content"
 
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
@@ -124,7 +128,7 @@ class Message(db.Model, SaveMixin):
     __tablename__ = "message"
 
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    sent_on = db.Column(db.DateTime, nullable=False)
+    timestamp = db.Column(db.DateTime, nullable=False)
 
     sender_id = db.Column(db.Integer, db.ForeignKey('user.id'))
     sender = relationship("User", foreign_keys=[sender_id])

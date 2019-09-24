@@ -1,50 +1,79 @@
-from flask_restplus import Namespace, fields
-from .models import User, Source, Text, Image, Video
+from marshmallow import Schema, fields, post_load, validate
+
+from .models import User, Source, Text, Image, Video, Message
+from marshmallow_oneofschema import OneOfSchema
 
 
-class MainApi:
+class UserSchema(Schema):
+    username = fields.String(required=True)
+    password = fields.String(required=True)
 
-    class Date(fields.Raw):
-        def format(self, value):
-            return value.strftime("%Y-%m-%dT%H:%M:%SZ")
 
-    api = Namespace('api', description='object descriptions')
-    user = api.model('user', {
-        'username': fields.String(required=True),
-        'password': fields.String(required=True),
-    })
+class TextSchema(Schema):
+    text = fields.String(required=True)
 
-    content = api.model('content', {
-        'type': fields.String(required=True, discriminator=True),
-    })
+    @post_load
+    def make(self, data, **kwargs):
+        return Text(**data)
 
-    text = api.inherit('text', content, {
-        'text': fields.String(required=True),
-    })
 
-    image = api.inherit('image', content, {
-        'url': fields.String(required=True),
-        'height': fields.Integer(required=True),
-        'width': fields.Integer(required=True),
-    })
+class ImageSchema(Schema):
+    url = fields.String(required=True)
+    height = fields.Integer(required=True)
+    width = fields.Integer(required=True)
 
-    video = api.inherit('video', content, {
-        'url': fields.String(required=True),
-        'source': fields.String(required=True, attribute=lambda x: str(Source(x.source).name))
-    })
+    @post_load
+    def make(self, data, **kwargs):
+        return Image(**data)
 
-    mapping = {Text: text, Image: image, Video: video}
 
-    message = api.model('message', {
-        'id': fields.Integer,
-        'timestamp': Date(attribute='sent_on'),
-        'sender': fields.Integer(required=True, attribute='sender.id'),
-        'recipient': fields.Integer(required=True, attribute='recipient.id'),
-        'content': fields.Polymorph(mapping, required=True),
-    })
+class VideoSchema(Schema):
 
-    messages = {
-        'messages': (fields.List(fields.Nested(message)))
-    }
+    url = fields.String(required=True)
+    source = fields.String(required=True, validate=validate.OneOf(Source._member_names_))
 
+    @post_load
+    def make(self, data, **kwargs):
+        return Video(**data)
+
+
+class ContentSchema(OneOfSchema):
+    type = fields.String(required=True)
+
+    type_schemas = {"text": TextSchema, "image": ImageSchema, 'video': VideoSchema}
+    obj_types = {Text: 'text', Image: 'image', Video: 'video'}
+
+    def get_obj_type(self, obj):
+        for o, t in self.obj_types.items():
+            if isinstance(obj, o):
+                return t
+        raise Exception("Unknown object type: {}".format(obj.__class__.__name__))
+
+
+class MessageSchema(Schema):
+    id = fields.Integer(dump_only=True)
+    timestamp = fields.Date("%Y-%m-%dT%H:%M:%SZ", dump_only=True)
+    sender = fields.Method("_get_sender", deserialize="_load_sender", required=True)
+    recipient = fields.Method("_get_recipient", deserialize="_load_sender", required=True)
+    content = fields.Nested(ContentSchema, required=True)
+
+    def _get_sender(self, obj):
+        return int(obj.sender.id)
+
+    def _load_sender(self, value):
+        return int(value)
+
+    def _get_recipient(self, obj):
+        return int(obj.recipient.id)
+
+    def _load_recipient(self, value):
+        return int(value)
+
+    @post_load
+    def make(self, data, **kwargs):
+        return Message(**data)
+
+
+class MessagesSchema(Schema):
+    messages = fields.Nested(MessageSchema, many=True)
 

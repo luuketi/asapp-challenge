@@ -27,10 +27,10 @@ class CreateUserTest(BaseTestCase):
 
     def test_BadRequests(self):
         response = self._create_user({'password': '123456'})
-        self.assert400(response)
+        self.assert_status(response, 422)
 
         response = self._create_user({'username': 'Juan'})
-        self.assert400(response)
+        self.assert_status(response, 422)
 
 class LoginTest(BaseTestCase):
 
@@ -74,24 +74,29 @@ class TestSendMessage(BaseTestCase):
         data = {'sender': 1, 'recipient': 1, 'content': {'type': 'text', 'text': 'hola'}}
         response = self._post(self._messages_url, data, self.token)
         self.assertEqual(response.json['id'], 1)
-        self.assertIn(str(datetime.date.today()), response.json['timestamp'])
+        self.assertIn(str(datetime.datetime.utcnow().date()), response.json['timestamp'])
+
+    def test_SendTextMessageWithoutText(self):
+        data = {'sender': 1, 'recipient': 1, 'content': {'type': 'text'}}
+        response = self._post(self._messages_url, data, self.token)
+        self.assert_status(response, 422)
 
     def test_SendImageMessage(self):
         data = {'sender': 1, 'recipient': 1, 'content': {'type': 'image', 'url': 'web.co', 'height': 800, 'width': 600}}
         response = self._post(self._messages_url, data, self.token)
         self.assertEqual(response.json['id'], 1)
-        self.assertIn(str(datetime.date.today()), response.json['timestamp'])
+        self.assertIn(str(datetime.datetime.utcnow().date()), response.json['timestamp'])
 
     def test_SendVideoMessage(self):
         data = {'sender': 1, 'recipient': 1, 'content': {'type': 'video', 'url': 'web.com', 'source': 'youtube'}}
         response = self._post(self._messages_url, data, self.token)
         self.assertEqual(response.json['id'], 1)
-        self.assertIn(str(datetime.date.today()), response.json['timestamp'])
+        self.assertIn(str(datetime.datetime.utcnow().date()), response.json['timestamp'])
 
     def test_SendVideoMessageWithWrongSource(self):
         data = {'sender': 1, 'recipient': 1, 'content': {'type': 'video', 'url': 'web.com', 'source': 'youtubee'}}
         response = self._post(self._messages_url, data, self.token)
-        self.assert_status(response, 500)
+        self.assert_status(response, 422)
 
     def test_WrongSender(self):
         data = {'sender': 10, 'recipient': 1, 'content': {'type': 'video', 'url': 'web.com', 'source': 'youtube'}}
@@ -103,6 +108,11 @@ class TestSendMessage(BaseTestCase):
         response = self._post(self._messages_url, data, self.token)
         self.assert400(response)
 
+    def test_NoAuthInMessage(self):
+        data = {'sender': 1, 'recipient': 1, 'content': {'type': 'image', 'url': 'web.co', 'height': 8, 'width': 6}}
+        response = self._post(self._messages_url, data)
+        self.assert401(response)
+
 
 class TestMessages(BaseTestCase):
 
@@ -113,6 +123,16 @@ class TestMessages(BaseTestCase):
         self.token = self._login({'username': 'user1', 'password': '123456'}).json['token']
 
     def test_GetMessages(self):
+        data = {'sender': 1, 'recipient': 1, 'content': {'type': 'image', 'url': 'web.co', 'height': 8, 'width': 6}}
+        self._post(self._messages_url, data, self.token)
+        response = self._get(self._messages_url, {'recipient': 1, 'start': 1}, self.token)
+        response_json = response.json['messages'][0]
+        self.assert200(response)
+        self.assertEqual(data['sender'], response_json['sender'])
+        self.assertEqual(data['recipient'], response_json['recipient'])
+        self.assertDictEqual(data['content'], response_json['content'])
+
+    def test_GetMultipleMessages(self):
         for s in range(1, 4):
             for r in range(1, 3):
                 for i in range(6):
@@ -130,4 +150,10 @@ class TestMessages(BaseTestCase):
         response = self._get(self._messages_url, {'recipient': 1, 'start': 10, 'limit': 2}, self.token)
         self.assert200(response)
         self.assertEqual(len(response.json['messages']), 2)
+
+    def test_NoAuthInGetMessages(self):
+        data = {'sender': 1, 'recipient': 1, 'content': {'type': 'image', 'url': 'web.co', 'height': 8, 'width': 6}}
+        self._post(self._messages_url, data, self.token)
+        response = self._get(self._messages_url, {'recipient': 1, 'start': 1})
+        self.assert401(response)
 

@@ -2,9 +2,8 @@
 
 from flask import Blueprint
 from flask_jwt_extended import JWTManager
-from flask_marshmallow import Marshmallow
 from flask_migrate import Migrate, MigrateCommand
-from flask_restplus import Api, Namespace
+from flask_restplus import Api
 from flask_script import Manager
 import os
 import unittest
@@ -26,20 +25,16 @@ api.add_namespace(api_ns, path='/v1')
 
 app = create_app(os.getenv('APP_ENV') or 'dev')
 app.register_blueprint(blueprint)
-
 app.app_context().push()
 
 manager = Manager(app)
-
 migrate = Migrate(app, db)
-
 manager.add_command('db', MigrateCommand)
 
 app.config['JWT_SECRET_KEY'] = 'jwt-secret-string'
 jwt = JWTManager(app)
-
 app.config['JWT_BLACKLIST_ENABLED'] = True
-app.config['JWT_BLACKLIST_TOKEN_CHECKS'] = ['access', 'refresh']
+app.config['JWT_BLACKLIST_TOKEN_CHECKS'] = ['access']
 
 
 @jwt.token_in_blacklist_loader
