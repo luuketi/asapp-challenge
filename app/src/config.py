@@ -7,6 +7,10 @@ class Config:
     SECRET_KEY = os.getenv('SECRET_KEY', 'some_kind_of_secret_key')
     SQLALCHEMY_DATABASE_URI = 'sqlite:///' + os.path.join(basedir, 'challenge.db')
     SQLALCHEMY_TRACK_MODIFICATIONS = False
+    JWT_SECRET_KEY = 'jwt-secret-string'
+    JWT_BLACKLIST_ENABLED = True
+    JWT_BLACKLIST_TOKEN_CHECKS = ['access']
+
     DEBUG = False
 
 

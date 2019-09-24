@@ -1,20 +1,38 @@
 import datetime
+from flask import Blueprint
 from flask_jwt_extended import create_access_token, jwt_required, get_raw_jwt
-from flask_restplus import Resource, Namespace
+from flask_restplus import Resource, Namespace, Api
 from webargs import fields
 from webargs.flaskparser import use_args, use_kwargs
 from src import db
 from src.dto import UserSchema, MessageSchema, MessagesSchema
 from src.models import User, Message, Text, Image, Video, RevokedToken
 
-api = Namespace('api', description='object descriptions')
+
+blueprint = Blueprint('api', __name__)
+api = Api(blueprint,
+          title='ASAPP Challenge Project',
+          version='1.0',
+          description='REST API for a chat backend'
+          )
 
 
-def return_error_message(error_string, error_code):
-    return {'status': 'fail', 'message': error_string}, error_code
+class BaseResource(Resource):
+
+    def _return_error_message(self, error_string, error_code):
+        """Returns a error message in json format"""
+        return {'status': 'fail', 'message': error_string}, error_code
+
+    def _get_user_by(self, username=None, user_id=None):
+        """Returns the user from model"""
+        if username:
+            return User.find_by_username(username)
+        if user_id:
+            return User.find_by_id(user_id)
+
 
 @api.route('/users')
-class Users(Resource):
+class Users(BaseResource):
 
     @api.response(200, '')
     @api.response(409, 'User already exists.')
@@ -23,17 +41,15 @@ class Users(Resource):
     def post(self, username, password):
         """Create a user in the system."""
 
-        # checks if user exists
-        if User.find_by_username(username):
-            return return_error_message('User already exists. Please Log in.', 409)
+        if self._get_user_by(username=username):
+            return self._return_error_message('User already exists. Please Log in.', 409)
 
-        # create user
         new_user = User(username=username, password=password).save()
         return {'id': new_user.id}, 200
 
 
 @api.route('/login')
-class Login(Resource):
+class Login(BaseResource):
 
     @api.response(200, '')
     @api.response(401, 'Unauthorized')
@@ -41,40 +57,34 @@ class Login(Resource):
     def post(self, username, password):
         """Log in as an existing user."""
 
-        # check if user exists
-        current_user = User.find_by_username(username)
+        current_user = self._get_user_by(username=username)
         if not current_user:
-            return return_error_message("User {} doesn't exist".format(username), 401)
+            return self._return_error_message("User {} doesn't exist".format(username), 401)
 
         # return token if password matches
         if current_user.check_password(password):
             access_token = create_access_token(identity=username)
             return {'id': current_user.id, 'token': access_token}
         else:
-            return return_error_message('User already exists. Please Log in.', 401)
+            return self._return_error_message('User already exists. Please Log in.', 401)
 
 
 @api.route('/logout')
-class Logout(Resource):
+class Logout(BaseResource):
 
     @jwt_required
     def post(self):
         """Log out an existing user."""
         jti = get_raw_jwt()['jti']
         try:
-            revoked_token = RevokedToken(jti=jti)
-            revoked_token.save()
+            RevokedToken(jti=jti).save()
             return {'message': 'Access token has been revoked.'}
         except Exception:
-            return return_error_message('Wrong credentials.', 500)
+            return self._return_error_message('Wrong credentials.', 500)
 
 
 @api.route('/messages')
-class Messages(Resource):
-
-    def _check_user_exists(self, user_type, user_id):
-        if not User.find_by_id(user_id):
-            return return_error_message("{} {} doesn't exist.".format(user_type, user_id), 400)
+class Messages(BaseResource):
 
     @api.response(200, '')
     @api.response(400, 'Sender/Receiver not found')
@@ -84,11 +94,10 @@ class Messages(Resource):
     def post(self, message):
         """Send a message from one user to another."""
 
-        # checks if sender and recipient exist
-        sender_err = self._check_user_exists('sender', message.sender)
-        recipient_err = self._check_user_exists('recipient', message.recipient)
-        if sender_err or recipient_err:
-            return sender_err or recipient_err
+        sender = self._get_user_by(user_id=message.sender)
+        recipient = self._get_user_by(user_id=message.recipient)
+        if not sender or not recipient:
+            return self._return_error_message("Sender/Receiver not found.", 400)
 
         new_message = Message(
             sender_id=message.sender,
@@ -116,7 +125,7 @@ class Messages(Resource):
 
 
 @api.route('/check')
-class Check(Resource):
+class Check(BaseResource):
 
     @api.response(200, '')
     def post(self):

@@ -1,6 +1,6 @@
 import enum
 import flask_bcrypt
-from sqlalchemy.orm import relationship, validates
+from sqlalchemy.orm import relationship
 
 from src import db
 

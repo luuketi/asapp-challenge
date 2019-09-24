@@ -15,7 +15,7 @@ class BaseTestCase(TestCase):
     def setUp(self):
         db.create_all()
         db.session.commit()
-        self._messages_url = url_for('api.api_messages')
+        self._messages_url = url_for('api.messages')
 
 
     def tearDown(self):
@@ -42,14 +42,14 @@ class BaseTestCase(TestCase):
 
     def _create_user(self, data=None):
         data = {'username': 'John', 'password': '123456'} if not data else data
-        return self._post(url_for('api.api_users'), data)
+        return self._post(url_for('api.users'), data)
 
     def _login(self, data=None):
         data = {'username': 'John', 'password': '123456'} if not data else data
-        return self._post(url_for('api.api_login'), data)
+        return self._post(url_for('api.login'), data)
 
     def _logout(self, token, data=None):
         data = {'username': 'John', 'password': '123456'} if not data else data
-        return self._post(url_for('api.api_logout'), data, token)
+        return self._post(url_for('api.logout'), data, token)
 
 
