@@ -48,7 +48,7 @@ class User(db.Model, SaveMixin):
 class RevokedToken(db.Model, SaveMixin):
     __tablename__ = 'revoked_tokens'
     id = db.Column(db.Integer, primary_key=True)
-    jti = db.Column(db.String(120))
+    jti = db.Column(db.String(120), nullable=False)
 
     @classmethod
     def is_jti_blacklisted(cls, jti):
@@ -110,11 +110,6 @@ class Video(Content):
     url = db.Column(db.String, nullable=False)
     source = db.Column(db.Enum(Source), nullable=False)
 
-    @validates('source')
-    def validate_source(self, key, source):
-        assert source in Source._member_names_, '{} is not a valid source'.format(source)
-        return source
-
     __mapper_args__ = {
         'polymorphic_identity': 'video',
     }
@@ -130,22 +125,20 @@ class Message(db.Model, SaveMixin):
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     timestamp = db.Column(db.DateTime, nullable=False)
 
-    sender_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    sender_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     sender = relationship("User", foreign_keys=[sender_id])
 
-    recipient_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    recipient_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     recipient = relationship("User", foreign_keys=[recipient_id])
 
-    content_id = db.Column(db.Integer, db.ForeignKey('content.id'))
+    content_id = db.Column(db.Integer, db.ForeignKey('content.id'), nullable=False)
     content = relationship("Content", foreign_keys=[content_id])
 
     @classmethod
     def get_messages(cls, recipient_id, start, limit):
-        messages = Message.query.filter(Message.recipient_id == recipient_id,
+        return Message.query.filter(Message.recipient_id == recipient_id,
                                         Message.id >= start
                                         ).limit(limit).all()
-
-        return messages
 
     def __repr__(self):
         return "<Message {} {} {}>".format(self.sender, self.recipient, self.content)

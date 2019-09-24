@@ -28,7 +28,6 @@ class ImageSchema(Schema):
 
 
 class VideoSchema(Schema):
-
     url = fields.String(required=True)
     source = fields.String(required=True, validate=validate.OneOf(Source._member_names_))
 

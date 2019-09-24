@@ -82,10 +82,10 @@ class Messages(Resource):
         """Send a message from one user to another."""
 
         # checks if sender and recipient exist
-        user_err = self._check_user_exists('sender', message.sender)
+        sender_err = self._check_user_exists('sender', message.sender)
         recipient_err = self._check_user_exists('recipient', message.recipient)
-        if user_err or recipient_err:
-            return user_err or recipient_err
+        if sender_err or recipient_err:
+            return sender_err or recipient_err
 
         new_message = Message(
             sender_id=message.sender,

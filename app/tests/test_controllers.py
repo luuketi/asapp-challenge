@@ -76,6 +76,11 @@ class TestSendMessage(BaseTestCase):
         self.assertEqual(response.json['id'], 1)
         self.assertIn(str(datetime.datetime.utcnow().date()), response.json['timestamp'])
 
+    def test_SendWrongTypeContent(self):
+        data = {'sender': 1, 'recipient': 1, 'content': {'type': 'audio', 'text': 'hola'}}
+        response = self._post(self._messages_url, data, self.token)
+        self.assert_status(response, 422)
+
     def test_SendTextMessageWithoutText(self):
         data = {'sender': 1, 'recipient': 1, 'content': {'type': 'text'}}
         response = self._post(self._messages_url, data, self.token)
