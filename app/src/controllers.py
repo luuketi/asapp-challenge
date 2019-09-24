@@ -4,7 +4,7 @@ from flask_restplus import Resource, Namespace
 from webargs import fields
 from webargs.flaskparser import use_args, use_kwargs
 from src import db
-from src.dto import *
+from src.dto import UserSchema, MessageSchema, MessagesSchema
 from src.models import User, Message, Text, Image, Video, RevokedToken
 
 api = Namespace('api', description='object descriptions')
