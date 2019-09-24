@@ -10,6 +10,9 @@ from src.models import User, Message, Text, Image, Video, RevokedToken
 api = Namespace('api', description='object descriptions')
 
 
+def return_error_message(error_string, error_code):
+    return {'status': 'fail', 'message': error_string}, error_code
+
 @api.route('/users')
 class Users(Resource):
 
@@ -22,7 +25,7 @@ class Users(Resource):
 
         # checks if user exists
         if User.find_by_username(username):
-            return {'status': 'fail', 'message': 'User already exists. Please Log in.'}, 409
+            return return_error_message('User already exists. Please Log in.', 409)
 
         # create user
         new_user = User(username=username, password=password).save()
@@ -41,14 +44,14 @@ class Login(Resource):
         # check if user exists
         current_user = User.find_by_username(username)
         if not current_user:
-            return {'status': 'fail', 'message': "User {} doesn't exist".format(username)}, 401
+            return return_error_message("User {} doesn't exist".format(username), 401)
 
         # return token if password matches
         if current_user.check_password(password):
             access_token = create_access_token(identity=username)
             return {'id': current_user.id, 'token': access_token}
         else:
-            return {'status': 'fail', 'message': 'Wrong credentials'}, 401
+            return return_error_message('User already exists. Please Log in.', 401)
 
 
 @api.route('/logout')
@@ -61,9 +64,9 @@ class Logout(Resource):
         try:
             revoked_token = RevokedToken(jti=jti)
             revoked_token.save()
-            return {'message': 'Access token has been revoked'}
+            return {'message': 'Access token has been revoked.'}
         except Exception:
-            return {'status': 'fail', 'message': 'Something went wrong'}, 500
+            return return_error_message('Wrong credentials.', 500)
 
 
 @api.route('/messages')
@@ -71,7 +74,7 @@ class Messages(Resource):
 
     def _check_user_exists(self, user_type, user_id):
         if not User.find_by_id(user_id):
-            return {'status': 'fail', 'message': "{} {} doesn't exist".format(user_type, user_id)}, 400
+            return return_error_message("{} {} doesn't exist.".format(user_type, user_id), 400)
 
     @api.response(200, '')
     @api.response(400, 'Sender/Receiver not found')
