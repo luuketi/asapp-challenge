@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 
 from flask_jwt_extended import JWTManager
-from flask_migrate import Migrate, MigrateCommand
-from flask_script import Manager
 import os
 import unittest
 
@@ -10,14 +8,7 @@ from src import create_app, db
 from src.controllers import blueprint
 import src.models as models
 
-app = create_app(os.getenv('APP_ENV') or 'dev')
-app.register_blueprint(blueprint)
-app.app_context().push()
-
-migrate = Migrate(app, db)
-manager = Manager(app)
-manager.add_command('db', MigrateCommand)
-
+app, manager = create_app(os.getenv('APP_ENV') or 'dev')
 jwt = JWTManager(app)
 
 

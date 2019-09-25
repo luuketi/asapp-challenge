@@ -1,6 +1,6 @@
 from marshmallow import Schema, fields, post_load, validate
 
-from .models import Source, Text, Image, Video, Message
+from src.models import Source, Text, Image, Video, Message
 from marshmallow_oneofschema import OneOfSchema
 
 

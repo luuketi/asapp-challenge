@@ -1,15 +1,14 @@
 import datetime
-from flask import Blueprint
 from flask_jwt_extended import create_access_token, jwt_required, get_raw_jwt
 from flask_restplus import Resource, Api
 from webargs import fields
 from webargs.flaskparser import use_args, use_kwargs
-from src import db
+
+from src import db, blueprint
 from src.dto import UserSchema, MessageSchema, MessagesSchema
 from src.models import User, Message, Text, Image, Video, RevokedToken
 
 
-blueprint = Blueprint('api', __name__)
 api = Api(blueprint,
           title='ASAPP Challenge Project',
           version='1.0',
