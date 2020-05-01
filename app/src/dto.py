@@ -5,7 +5,7 @@ from marshmallow_oneofschema import OneOfSchema
 
 
 class UserSchema(Schema):
-    username = fields.String(required=True)
+    username = fields.String(required=True, validate=[ validate.Length(min=1, error="Please enter your user name.")])
     password = fields.String(required=True)
 
 
